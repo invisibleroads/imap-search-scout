@@ -1,0 +1,160 @@
+Start screen
+------------
+screen
+
+
+Clear crontab
+-------------
+crontab -r
+
+
+Kill server process and wait for scout utilities to finish
+----------------------------------------------------------
+ps x | grep paster
+
+
+Backup database via pg_dump
+---------------------------
+pg_dump -U ${DATABASE-USER} ${DATABASE-NAME} > backups/`date +%Y%m%d`.sql
+
+
+Edit pg_dump output
+-------------------
+cp backups/`date +%Y%m%d`.sql backups/`date +%Y%m%d`-.sql 
+
+copy pg_dump output to another file
+keep people table and put at top of file
+keep imap accounts
+keep rules table
+delete other sql
+make sure to include sql to adjust sequences for auto-increment
+    ALTER SEQUENCE xxx RESTART WITH ###
+where ### = maximum ID plus one
+
+
+Backup documents via move
+-------------------------
+for ${IMAP-USER} in ${IMAP-USER1} ${IMAP-USER2}; do
+    python utilities/backup.py -c production.ini -i ${IMAP-USER} -d /home/${WEBFACTION-USER}/backups/ -m
+done
+
+
+Upgrade Xapian
+--------------
+wget http://oligarchy.co.uk/xapian/1.0.18/xapian-core-1.0.18.tar.gz
+tar xzvf xapian-core-1.0.18.tar.gz
+wget http://oligarchy.co.uk/xapian/1.0.18/xapian-bindings-1.0.18.tar.gz
+tar xzvf xapian-bindings-1.0.18.tar.gz
+cd xapian-core-1.0.18
+./configure --prefix=$HOME
+make
+make install
+cd ../xapian-bindings-1.0.18
+./configure --prefix=$HOME PYTHON=/usr/local/bin/python2.6 PYTHON_LIB=$HOME/lib/python2.6 --with-python --without-ruby --without-php --without-tcl
+make
+make install
+
+
+Upgrade html5lib
+----------------
+export PYTHONPATH=$HOME/lib/python2.6
+/usr/local/bin/easy_install-2.6 --install-dir=$HOME/lib/python2.6 --script-dir=$HOME/bin -U html5lib
+ipython
+>>> import html5lib
+
+
+Upgrade lxml
+------------
+export PYTHONPATH=$HOME/lib/python2.6
+/usr/local/bin/easy_install-2.6 --install-dir=$HOME/lib/python2.6 --script-dir=$HOME/bin -U lxml
+
+--- src/lxml/html/_html5builder.py (revision 5505)
++++ src/lxml/html/_html5builder.py (local)
+@@ -32,12 +32,12 @@
+
+- def __init__(self):
++ def __init__(self, *args, **kwargs):
+html_builder = etree_builders.getETreeModule(html, fullTree=False)
+etree_builder = etree_builders.getETreeModule(etree, fullTree=False)
+self.elementClass = html_builder.Element
+self.commentClass = etree_builder.Comment
+- _base.TreeBuilder.__init__(self)
++ _base.TreeBuilder.__init__(self, *args, **kwargs)
+
+def reset(self):
+_base.TreeBuilder.reset(self)
+
+ipython
+>>> from lxml.html import html5parser
+
+
+Update scout
+------------
+svn update
+
+
+Prepare .production.cfg
+-----------------------
+vim .production.cfg
+
+
+Run unit tests
+--------------
+cp .production.cfg .development.cfg 
+nosetests
+
+
+Refresh documentation
+---------------------
+cd $HOME/webapps/scout/docs
+make html
+rm -Rf $HOME/webapps/scout_docs/*
+mv $HOME/webapps/scout/docs/_build/html/* $HOME/webapps/scout_docs
+
+
+Reset database
+--------------
+python utilities/reset.py -c production.ini
+
+
+Load pg_dump output using psql
+------------------------------
+psql -U ${DATABASE-USER} ${DATABASE-NAME} < backups/`date +%Y%m%d`-.sql
+
+
+Index documents via COPY
+------------------------
+for ${IMAP-USER} in ${IMAP-USER1} ${IMAP-USER2}; do
+    python utilities/index.py -c production.ini -i ${IMAP-USER} /home/${WEBFACTION-USER}/backups/${IMAP-USER} >> /home/${WEBFACTION-USER}/webapps/scout/mail.log 2>&1
+done
+
+
+Archive new messages
+--------------------
+python utilities/archive.py -c production.ini >> /home/${WEBFACTION-USER}/webapps/scout/mail.log 2>&1
+
+
+Check that each crontab line works properly
+-------------------------------------------
+cd /home/${WEBFACTION-USER}/webapps/scout;/usr/local/bin/python2.6 utilities/comb.py -c production.ini >> mail.log 2>&1
+cd /home/${WEBFACTION-USER}/webapps/scout;/usr/local/bin/python2.6 utilities/clean.py -c production.ini >> mail.log 2>&1
+kill -9 `ps -u ${WEBFACTION-USER} -o rss,etime,pid,command | grep "archive.py -c production.ini" | grep -v grep | awk '{print $3}'`;export XAPIAN_FLUSH_THRESHOLD=1000;cd /home/${WEBFACTION-USER}/webapps/scout;/usr/local/bin/python2.6 utilities/archive.py -c production.ini -n 100 >> mail.log 2>&1
+export XAPIAN_FLUSH_THRESHOLD=1000;cd /home/${WEBFACTION-USER}/webapps/scout;/usr/local/bin/python2.6 utilities/archive.py -c production.ini -n 100 inbox >> mail.log 2>&1
+cd /home/${WEBFACTION-USER}/webapps/scout;/home/${WEBFACTION-USER}/bin/paster serve --daemon production.ini
+
+
+Restore crontab
+--------------------
+crontab crontab.crt
+
+
+Start server
+--------------------
+paster serve --daemon production.ini
+
+
+Remove backup folders
+---------------------
+for ${IMAP-USER} in ${IMAP-USER1} ${IMAP-USER2}; do
+    rm -Rf /home/${WEBFACTION-USER}/backups/${IMAP-USER}
+done

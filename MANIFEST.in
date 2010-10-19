@@ -1,0 +1,4 @@
+include default.cfg
+include development.ini production.ini test.ini
+recursive-include scout/public *
+recursive-include scout/templates *
