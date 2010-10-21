@@ -20,7 +20,7 @@ def isPerson():
     return 1 if 'personID' in session else 0
 
 def isPersonSuper():
-    return 'personID' in session and session['is_super']
+    return 1 if session.get('is_super', False) else 0
 
 def clipString(string, characterLimit=32):
     return string[:characterLimit] + '...' if len(string) > characterLimit else string

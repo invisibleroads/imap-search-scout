@@ -41,7 +41,6 @@ people_table = sa.Table('people', Base.metadata,
     sa.Column('email_sms', sa.String(parameter.EMAIL_LENGTH_MAXIMUM)),
     sa.Column('minutes_offset', sa.Integer, default=0),
     sa.Column('rejection_count', sa.Integer, default=0),
-    sa.Column('pickled', sa.LargeBinary),
     sa.Column('is_super', sa.Boolean, default=False),
     sa.Column('is_active', sa.Boolean, default=True),
     sa.Column('when_modified_rule', sa.DateTime),
@@ -111,23 +110,21 @@ imap_message_attachment_extension_links_table = sa.Table('imap_message_attachmen
 
 class Person(object):
 
-    def __init__(self, username, password_hash, nickname, email, email_sms='', is_super=False, is_active=True):
+    def __init__(self, username, password_hash, nickname, email, email_sms=''):
         self.username = username
         self.password_hash = password_hash
         self.nickname = nickname
         self.email = email
         self.email_sms = email_sms
-        self.is_super = is_super
-        self.is_active = is_active
 
     def __repr__(self):
         return "<Person('%s')>" % self.username
 
 
-class PersonConfirmation(Person):
+class PersonCandidate(Person):
 
     def __repr__(self):
-        return "<PersonConfirmation('%s')>" % self.username
+        return "<PersonCandidate('%s')>" % self.username
 
 
 class IMAPAccount(object):
