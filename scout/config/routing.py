@@ -27,25 +27,21 @@ def make_map(config):
     map.connect('person_logout_plain', '/people/logout', controller='people', action='logout') 
     map.connect('person_logout', '/people/logout/{targetURL}', controller='people', action='logout')
     map.connect('person_reset', '/people/reset', controller='people', action='reset')
-    # Map mail pages
-    map.connect('mail_index', '/', controller='mail', action='index')
-    map.connect('mail_search', '/search', controller='mail', action='search')
-    map.connect('mail_download', '/download/{documentID}/{fileNumber}', controller='mail', action='download')
-    map.connect('mail_get_plain', '/get', controller='mail', action='get')
-    map.connect('mail_get', '/get/{documentID}', controller='mail', action='get')
-    map.connect('mail_revive_plain', '/revive', controller='mail', action='revive') 
-    map.connect('mail_revive', '/revive/{documentID}', controller='mail', action='revive') 
-    map.connect('mail_change_plain', '/change', controller='mail', action='change')
-    map.connect('mail_change', '/change/{documentID}', controller='mail', action='change')
-    # Map rule pages
-    map.connect('rule_index', '/rules', controller='rule', action='index')
-    map.connect('rule_add', '/rules/add', controller='rule', action='add')
-    map.connect('rule_remove', '/rules/remove', controller='rule', action='remove')
-    # Map account pages
-    map.connect('account_index', '/accounts', controller='account', action='index')
-    map.connect('account_add', '/accounts/add', controller='account', action='add')
-    map.connect('account_check', '/accounts/check', controller='account', action='check')
-    map.connect('account_change', '/accounts/change', controller='account', action='change')
-    map.connect('account_activate', '/accounts/activate', controller='account', action='activate')
+    # Map accounts
+    map.connect('account_index', '/accounts', controller='accounts', action='index')
+    map.connect('account_add', '/accounts/add', controller='accounts', action='add')
+    map.connect('account_check', '/accounts/check', controller='accounts', action='check')
+    map.connect('account_update', '/accounts/update', controller='accounts', action='update')
+    # Map messages
+    map.connect('message_index', '/', controller='messages', action='index')
+    map.connect('message_search', '/search', controller='messages', action='search')
+    map.connect('message_update', '/{documentID}/update', controller='messages', action='update')
+    map.connect('message_revive', '/{documentID}/revive', controller='messages', action='revive') 
+    map.connect('message_download', '/{documentID}/download', controller='messages', action='download')
+    map.connect('message_download_file', '/{documentID}/download/{fileIndex}', controller='messages', action='download')
+    # Map rules
+    map.connect('rule_index', '/rules', controller='rules', action='index')
+    map.connect('rule_add', '/rules/add', controller='rules', action='add')
+    map.connect('rule_remove', '/rules/remove', controller='rules', action='remove')
     # Return
     return map

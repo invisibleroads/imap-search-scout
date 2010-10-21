@@ -3,16 +3,16 @@
 import sqlalchemy as sa
 import sqlalchemy.orm as orm
 import hashlib
-import warnings; warnings.simplefilter('error')
 import datetime
 import xapian
 import shutil
 import glob
-import os; basePath = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import logging; logging.basicConfig(filename=os.path.join(basePath, 'logs/mail.log'), level=logging.DEBUG, format='%(asctime)s %(levelname)s %(message)s')
+import os
 # Import custom modules
 from scout.model.meta import Session, Base
 from scout.config import parameter
+
+
 # Set constants
 xapian_date, xapian_privacy, xapian_messageTags, xapian_attachmentExtensions = xrange(4)
 action_hide = 0
@@ -73,7 +73,7 @@ imap_messages_table = sa.Table('imap_messages', Base.metadata,
     sa.Column('from_whom', sa.Unicode(parameter.WHOM_LENGTH_MAXIMUM)),
     sa.Column('to_cc_bcc', sa.UnicodeText),
     sa.Column('subject', sa.Unicode(parameter.SUBJECT_LENGTH_MAXIMUM)),
-    sa.Column('message_hash', sa.Binary(32)),
+    sa.Column('message_hash', sa.LargeBinary(32)),
     sa.Column('message_status', sa.Integer, default=message_incomplete),
     sa.Column('message_status_changed', sa.Boolean, default=False),
     sa.Column('privacy', sa.Integer, default=0),
@@ -357,7 +357,6 @@ def clean(pathStore, isThorough=False):
     Base.Session.commit()
     if crapCount:
         message = 'Cleaned %s incomplete message(s)' % crapCount
-        logging.debug(message)
         return message
     else:
         return 'The database is clean.'
@@ -393,7 +392,7 @@ def getRelatedPacks(pathStore, documentID):
         if fileName in ['header.txt', 'tags.txt']: 
             continue
         # Extract extension
-        fileBase, fileExtension = os.path.splitext(fileName)
+        fileExtension = os.path.splitext(fileName)[1]
         fileExtension = unicode(fileExtension[1:1 + parameter.ATTACHMENT_EXTENSION_LENGTH_MAXIMUM].lower())
         # If we have a part,
         if fileExtension in ['txt', 'html']:
