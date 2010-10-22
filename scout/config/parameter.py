@@ -1,5 +1,5 @@
 # Set site parameters
-SITE_NAME = 'imap-search-scout'
+SITE_NAME = 'Scout'
 SITE_VERSION = '0.9.0'
 # Set person parameters
 EMAIL_LENGTH_MAXIMUM = 48

@@ -107,10 +107,6 @@ $('#username').focus();
 $('#minutesOffset').val(new Date().getTimezoneOffset());
 </%def>
 
-<%def name="toolbar()">
-${h.SITE_NAME} v${h.SITE_VERSION}
-</%def>
-
 <table>
 <tr>
 <td><label for=username>Username</label></td>

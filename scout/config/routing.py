@@ -30,8 +30,8 @@ def make_map(config):
     # Map accounts
     map.connect('account_index', '/accounts', controller='accounts', action='index')
     map.connect('account_add', '/accounts/add', controller='accounts', action='add')
-    map.connect('account_check', '/accounts/check', controller='accounts', action='check')
-    map.connect('account_update', '/accounts/update', controller='accounts', action='update')
+    map.connect('account_check', '/accounts/{accountID}/check', controller='accounts', action='check')
+    map.connect('account_update', '/accounts/{accountID}/update', controller='accounts', action='update')
     # Map messages
     map.connect('message_index', '/', controller='messages', action='index')
     map.connect('message_search', '/search', controller='messages', action='search')

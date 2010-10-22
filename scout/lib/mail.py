@@ -12,10 +12,7 @@ import email.MIMEBase
 import email.Encoders
 
 
-def buildMessage(headerByValue, when=None, bodyText='', bodyHtml='', attachmentPaths=None):
-    # Initialize
-    if not when:
-        when = datetime.datetime.now()
+def buildMessage(headerByValue, when, bodyText='', bodyHtml='', attachmentPaths=None):
     # Build
     message = email.MIMEMultipart.MIMEMultipart()
     for key, value in headerByValue.iteritems():

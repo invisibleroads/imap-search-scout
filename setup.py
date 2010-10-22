@@ -7,7 +7,7 @@ except ImportError:
 
 setup(
     name='scout',
-    version='0.9',
+    version='0.9.0',
     description='',
     author='',
     author_email='',

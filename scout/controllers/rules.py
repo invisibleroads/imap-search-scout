@@ -41,7 +41,7 @@ class RuleController(BaseController):
             meta.Session.add(rule)
             # Update
             person = meta.Session.query(model.Person).get(personID)
-            person.when_modified_rule = datetime.datetime.now()
+            person.when_modified_rule = datetime.datetime.utcnow()
             meta.Session.commit()
         # Return
         return render('/emails/rules_.mako')
@@ -55,7 +55,7 @@ class RuleController(BaseController):
         meta.Session.execute(model.imap_message_rules_table.delete().where(model.IMAPMessageRule.owner_id==personID).where(model.IMAPMessageRule.id==ruleID))
         # Update
         person = meta.Session.query(model.Person).get(personID)
-        person.when_modified_rule = datetime.datetime.now()
+        person.when_modified_rule = datetime.datetime.utcnow()
         # Commit
         meta.Session.commit()
         # Return

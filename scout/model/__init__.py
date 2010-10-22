@@ -64,7 +64,7 @@ imap_accounts_table = sa.Table('imap_accounts', Base.metadata,
     sa.Column('password', sa.String(parameter.PASSWORD_LENGTH_MAXIMUM)),
     sa.Column('is_active', sa.Boolean(), default=True),
     sa.Column('when_archived', sa.DateTime),
-    sa.UniqueConstraint('host', 'username')
+    sa.UniqueConstraint('host', 'username'),
 )
 imap_messages_table = sa.Table('imap_messages', Base.metadata,
     sa.Column('id', sa.Integer, primary_key=True),

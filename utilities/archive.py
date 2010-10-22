@@ -34,7 +34,7 @@ def run(newCountMaximum, includes):
             if newCount >= newCountMaximum:
                 return 'Added %s messages; reached maximum for session' % newCount
         # Update
-        imapAccount.when_archived = datetime.datetime.now()
+        imapAccount.when_archived = datetime.datetime.utcnow()
     # Return
     return 'Added %s messages' % newCount
 

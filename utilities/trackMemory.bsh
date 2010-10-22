@@ -1,7 +1,0 @@
-#!/bin/bash
-rm $HOME/memory.log
-while [ 1 ]; do
-    (mem | grep mail.py | grep -v grep) >> $HOME/memory.log
-    tail $HOME/memory.log --lines=1
-    sleep 60
-done

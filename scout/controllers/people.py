@@ -26,12 +26,16 @@ class PeopleController(BaseController):
 
     def register(self):
         'Show account registration page'
+        if not h.isPersonSuper():
+            return redirect(url('person_login', targetURL=h.encodeURL('/')))
         c.isNew = True
         return render('/people/change.mako')
 
     @jsonify
     def register_(self):
         'Store proposed changes and send confirmation email'
+        if not h.isPersonSuper():
+            return dict(isOk=0, message='Access denied')
         return changePerson(dict(request.POST), 'registration', '/people/confirm.mako')
 
     def confirm(self, ticket):

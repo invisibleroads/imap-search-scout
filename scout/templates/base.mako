@@ -20,7 +20,6 @@ $(document).ready(function() {
         function () {this.className = this.className.replace('OFF', 'ON');}, 
         function () {this.className = this.className.replace('ON', 'OFF');}
     );
-    $('#help_button').click(function () {$('.help').toggle();});
     function getID(obj) {return /\d+/.exec(obj.id)[0]}
     ${self.js()}\
 });
@@ -56,7 +55,6 @@ linkPacks = [
 &nbsp;
 <a id=person_logout href="${h.url('person_logout', targetURL=h.encodeURL(request.path))}" class=linkOFF>Logout</a>
 % endif
-<a id=help_button class=linkOFF>Help</a>
 </div>
 </div>
 <div id=main>${next.body()}</div>
