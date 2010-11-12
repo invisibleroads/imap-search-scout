@@ -101,16 +101,18 @@ $('#accountAdd').click(function() {
             password: password
         }, function(data) {
             if (data.isOk) {
-                window.location.reload(); // Reload page
+                window.location.reload();
             } else {
-                $('.lockOnSave').removeAttr('disabled');
                 $('#accountStatus').html('Please check credentials');
-                $('#accountHost').focus();
             }
-        }, 'json');
+        });
     } else {
-        $('#accountStatus').html('All fields are required.');
+        $('#accountStatus').html('All fields are required');
     }
+    // Unlock
+    $('.lockOnSave').removeAttr('disabled');
+    // Focus
+    $('#accountOwnerID').focus();
 });
 </%def>
 

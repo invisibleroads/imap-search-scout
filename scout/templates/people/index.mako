@@ -2,14 +2,11 @@
 
 <%def name="title()">People</%def>
 
-<%def name="toolbar()">${len(c.people)} people</%def>
-
-<%def name="board()">
+<%def name="toolbar()">
 % if h.isPersonSuper():
 <a href="${h.url('person_register')}" class=linkOFF>Register a new user</a>
 % endif
 </%def>
-
 
 <table>
 % for person in c.people:
