@@ -1,8 +1,7 @@
+'Routines for formatting email'
 # Import system modules
 import string
 import re
-import chardet
-import webhelpers.util
 
 
 pattern_address = re.compile(r'<.*?>')

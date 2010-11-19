@@ -1,7 +1,7 @@
 # Import system modules
 import unittest
 # Import custom modules
-from scout.lib import mail_store_imap, mail_process
+from scout.lib import imap, mail_process
 from scout import tests
 from scout.config import parameter
 
@@ -13,7 +13,7 @@ class TestMailProcess(unittest.TestCase):
         # Call super constructor
         unittest.TestCase.__init__(self, *args, **kwargs)
         # Connect
-        self.mailbox = mail_store_imap.Store(*tests.credentials)
+        self.mailbox = imap.Store(*tests.credentials)
 
     def setUp(self):
         # Load one message

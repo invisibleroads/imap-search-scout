@@ -11,7 +11,7 @@ import script_process
 from scout import model
 from scout.model import meta
 from scout.config import parameter, environment
-from scout.lib import mail_store_imap, mail_process, store
+from scout.lib import imap, mail_process, store
 
 
 def run(newCountMaximum, includes):
@@ -23,8 +23,8 @@ def run(newCountMaximum, includes):
     for imapAccount in meta.Session.query(model.IMAPAccount).filter_by(is_active=True).order_by(sa.func.random()):
         # Connect to imapBox
         try:
-            imapBox = mail_store_imap.Store(imapAccount.host, imapAccount.username, imapAccount.password)
-        except mail_store_imap.IMAPError:
+            imapBox = imap.Store(imapAccount.host, imapAccount.username, imapAccount.password)
+        except imap.IMAPError:
             # Skip accounts to which we cannot connect
             continue
         # For each message in the imapBox,

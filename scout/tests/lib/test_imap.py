@@ -4,7 +4,7 @@ import imaplib
 import tempfile
 import shutil
 # Import custom modules
-from scout.lib import mail_store_imap
+from scout.lib import imap
 from scout import tests
 
 
@@ -17,7 +17,7 @@ class TestMailStoreIMAP(unittest.TestCase):
         # Call super constructor
         unittest.TestCase.__init__(self, *args, **kwargs)
         # Connect
-        self.mailbox = mail_store_imap.Store(*tests.credentials)
+        self.mailbox = imap.Store(*tests.credentials)
 
     def tearDown(self):
         'Delete temporary folders'

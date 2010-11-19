@@ -134,9 +134,7 @@ class Store(object):
     # Expunge
 
     def expunge(self):
-        """
-        Purge messages flagged for deletion
-        """
+        'Purge messages flagged for deletion'
         self.server.expunge()
 
 

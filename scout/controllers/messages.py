@@ -10,7 +10,7 @@ import os
 import simplejson
 # Import custom modules
 from scout.lib.base import BaseController, render
-from scout.lib import mail, mail_store_imap, mail_parse
+from scout.lib import mail, imap, mail_parse
 from scout.lib import file_store, query_process
 from scout.lib import helpers as h
 from scout.config import parameter
@@ -149,8 +149,8 @@ class MailController(BaseController):
             return {'isOk': 0, 'message': 'The whichAccount variable does not correspond to an actual account.'}
         # Connect to the IMAP account
         try:
-            imapStore = mail_store_imap.Store(imapAccount.host, imapAccount.username, imapAccount.password)
-        except mail_store_imap.IMAPError:
+            imapStore = imap.Store(imapAccount.host, imapAccount.username, imapAccount.password)
+        except imap.IMAPError:
             return {'isOk': 0, 'message': 'Cannot connect to IMAP account.\nPlease check your IMAP password on the Accounts page.'}
         # Parse header
         documentPath = pathStore.fillDocumentPath(documentID)
