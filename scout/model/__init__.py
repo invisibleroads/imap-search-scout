@@ -89,8 +89,7 @@ imap_message_rules_table = sa.Table('imap_message_rules', Base.metadata,
     sa.Column('from_whom', sa.Unicode(parameter.WHOM_LENGTH_MAXIMUM)),
     sa.Column('to_whom', sa.Unicode(parameter.WHOM_LENGTH_MAXIMUM)),
     sa.Column('subject', sa.Unicode(parameter.SUBJECT_LENGTH_MAXIMUM)),
-    sa.Column('tag', sa.Unicode(parameter.TAG_LENGTH_MAXIMUM)),
-    sa.Column('priority', sa.Integer, default=1),
+    sa.Column('priority', sa.Integer, default=0),
 )
 imap_message_tags_table = sa.Table('imap_message_tags', Base.metadata,
     sa.Column('id', sa.Integer, primary_key=True),
@@ -201,28 +200,23 @@ class IMAPMessage(object):
 
 class IMAPMessageRule(object):
 
-    def __init__(self, owner_id, rule_type, from_whom, to_whom, subject, tag, priority):
+    def __init__(self, owner_id, rule_type, from_whom, to_whom, subject):
         self.owner_id = owner_id
         self.type = rule_type
         self.from_whom = from_whom
         self.to_whom = to_whom
         self.subject = subject
-        self.tag = tag
-        self.priority = priority
 
     def __repr__(self):
-        terms = ['priority=%s' % self.priority]
-        terms.append({
+        terms = [{
             action_hide: 'hide',
-        }[self.type])
+        }[self.type]]
         if self.from_whom:
             terms.append('from(%s)' % self.from_whom)
         if self.to_whom:
             terms.append('to(%s)' % self.to_whom)
         if self.subject:
             terms.append('subject(%s)' % self.subject)
-        if self.tag:
-            terms.append('tag(%s)' % self.tag)
         return ' '.join(terms)
 
 

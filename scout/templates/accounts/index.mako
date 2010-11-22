@@ -126,7 +126,7 @@ from scout import model
 from scout.model import Session
 personID = h.getPersonID()
 %>
-<table class=maximumWidth>
+<table>
     <tr>
         <td><b>Owner</b></td>
         <td><b>Host</b></td>
