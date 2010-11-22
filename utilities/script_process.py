@@ -1,26 +1,26 @@
-'Define common functions for the command-line utilities'
-
-
+'Define common functions for command-line utilities'
 # Import context modules
 import os; basePath = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-expandBasePath = lambda x: os.path.join(basePath, x)
 import sys; sys.path.append(basePath)
 # Import system modules
-import ConfigParser
 import sqlalchemy as sa
+import ConfigParser
 import optparse
 # Import custom modules
 from scout import model
+from scout.lib import store
 from scout.lib import file_store
 
 
 def buildOptionParser():
+    'Return default optionParser'
     optionParser = optparse.OptionParser()
-    optionParser.add_option('-c', '--configurationPath', dest='configurationPath', help='use the specified configuration file', metavar='NAME', default=expandBasePath('development.ini'))
+    optionParser.add_option('-c', '--configurationPath', dest='configurationPath', help='use the specified configuration file', metavar='PATH', default=store.expandBasePath('development.ini'))
     return optionParser
 
 
 def initialize(options):
+    'Initialize connection to database'
     # Show feedback
     print 'Using %s' % options.configurationPath
     # Load

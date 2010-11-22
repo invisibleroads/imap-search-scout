@@ -14,9 +14,8 @@ from scout.tests import *
 # Define shortcuts
 username = 'username'
 password = 'password'
-email = 'username@example.com'
-email_sms = ''
 nickname = u'nickname'
+email = 'email@example.com'
 
 
 class TestPeopleController(TestController):
@@ -47,14 +46,20 @@ class TestPeopleController(TestController):
         'Make sure that registration works'
         # Make sure the registration page appears properly
         self.assert_('Registration' in self.app.get(url('person_register')))
-        # Register the person
-        self.app.post(url('person_register_'), dict(nickname=nickname, username=username, password=password, email=email, email_sms=email_sms))
-        # Make sure the personCandidate exists
-        self.assertEqual(meta.Session.query(model.PersonCandidate).filter_by(username=username).count(), 1)
+        # Register
+        self.app.post(url('person_register_'), dict(username=username, password=password, nickname=nickname, email=email))
+        # Register with the same username but with different case
+        self.app.post(url('person_register_'), dict(username=username.upper(), password=password, nickname=nickname + 'x', email=email + 'x'))
+        # Register with the same nickname but with different case
+        self.app.post(url('person_register_'), dict(username=username + 'x', password=password, nickname=nickname.upper(), email=email + 'x'))
+        # Register with the same email but with different case
+        self.app.post(url('person_register_'), dict(username=username + 'x', password=password, nickname=nickname + 'x', email=email.upper()))
         # Confirm registration
-        self.app.get(url('person_confirm', ticket=meta.Session.query(model.PersonCandidate.ticket).filter_by(username=username).first()[0]))
+        self.app.get(url('person_confirm', ticket=meta.Session.query(model.PersonCandidate.ticket).filter_by(email=email).first()[0]))
         # Make sure the person exists
-        self.assertEqual(meta.Session.query(model.Person).filter_by(username=username).count(), 1)
+        self.assertEqual(meta.Session.query(model.Person).filter_by(email=email).count(), 1)
+        # Make sure that conflicting registrations have been deleted
+        self.assertEqual(meta.Session.query(model.PersonCandidate).filter_by(password_hash=model.hashString(password)).count(), 0)
 
     def test_reset(self):
         """
@@ -71,9 +76,9 @@ class TestPeopleController(TestController):
         # Reset password
         self.assertEqual(simplejson.dumps({'isOk': 1}), self.app.post(url('person_reset'), dict(email=email)).body)
         # Make sure the candidate exists
-        self.assertEqual(meta.Session.query(model.PersonCandidate).filter_by(username=username).count(), 1)
+        self.assertEqual(meta.Session.query(model.PersonCandidate).filter_by(email=email).count(), 1)
         # Activate candidate
-        self.app.get(url('person_confirm', ticket=meta.Session.query(model.PersonCandidate.ticket).filter_by(username=username).first()[0]))
+        self.app.get(url('person_confirm', ticket=meta.Session.query(model.PersonCandidate.ticket).filter_by(email=email).first()[0]))
         # Make sure the password has changed
         self.assertEqual(meta.Session.query(model.Person).filter_by(password_hash=model.hashString(password)).count(), 0)
 
@@ -87,11 +92,11 @@ class TestPeopleController(TestController):
         """
         # Assert that we are redirected to the login page if the person is not logged in
         response = self.app.get(url('person_update'))
-        self.assertEqual(urlparse.urlparse(response.response.location).path, url('person_login', targetURL=h.encodeURL('/')))
+        self.assertEqual(urlparse.urlparse(response.response.location).path, url('person_login', targetURL=h.encodeURL(url('person_update'))))
         # Assert that we get rejected if we try to post without logging in
-        self.assertEqual(simplejson.dumps({'isOk': 0}), self.app.post(url('person_update_')).body)
+        self.assertEqual(simplejson.dumps({'message': 'Login required', 'isOk': 0}), self.app.post(url('person_update_')).body)
         # Add person
-        meta.Session.add(model.Person(username, model.hashString(password), nickname, email, email_sms))
+        meta.Session.add(model.Person(username, model.hashString(password), nickname, email))
         meta.Session.commit()
         # Log in
         self.app.post(url('person_login_'), dict(username=username, password=password))
@@ -100,20 +105,18 @@ class TestPeopleController(TestController):
         self.assert_(username in responseBody)
         self.assert_(nickname in responseBody)
         self.assert_(email in responseBody)
-        self.assert_(email_sms in responseBody)
         # Update credentials
-        newUsername = store.makeRandomString(16)
-        newPassword = store.makeRandomAlphaNumericString(parameter.PASSWORD_LENGTH_AVERAGE)
-        newNickname = unicode(store.makeRandomString(16))
-        newEmail = re.sub(r'.*@', store.makeRandomString(16) + '@', email)
-        newEmailSMS = re.sub(r'.*@', store.makeRandomString(16) + '@', email)
-        self.assertEqual(simplejson.dumps({'isOk': 1}), self.app.post(url('person_update_'), dict(username=newUsername, password=newPassword, nickname=newNickname, email=newEmail, email_sms=newEmailSMS)).body)
+        username_ = store.makeRandomString(parameter.USERNAME_LENGTH_MAXIMUM)
+        password_ = store.makeRandomAlphaNumericString(parameter.PASSWORD_LENGTH_AVERAGE)
+        nickname_ = unicode(store.makeRandomString(parameter.NICKNAME_LENGTH_MAXIMUM))
+        email_ = re.sub(r'.*@', store.makeRandomString(16) + '@', email)
+        self.assertEqual(simplejson.dumps({'isOk': 1}), self.app.post(url('person_update_'), dict(username=username_, password=password_, nickname=nickname_, email=email_)).body)
         # Make sure the credentials have not changed yet
-        self.assertEqual(meta.Session.query(model.Person).filter_by(username=newUsername, password_hash=model.hashString(newPassword), nickname=newNickname, email=newEmail, email_sms=newEmailSMS).count(), 0)
+        self.assertEqual(meta.Session.query(model.Person).filter_by(username=username_, password_hash=model.hashString(password_), nickname=nickname_, email=email_).count(), 0)
         # Activate candidate
-        self.app.get(url('person_confirm', ticket=meta.Session.query(model.PersonCandidate.ticket).filter_by(username=newUsername).first()[0]))
+        self.app.get(url('person_confirm', ticket=meta.Session.query(model.PersonCandidate.ticket).filter_by(email=email_).first()[0]))
         # Make sure the credentials have changed
-        self.assertEqual(meta.Session.query(model.Person).filter_by(username=newUsername, password_hash=model.hashString(newPassword), nickname=newNickname, email=newEmail, email_sms=newEmailSMS).count(), 1)
+        self.assertEqual(meta.Session.query(model.Person).filter_by(username=username_, password_hash=model.hashString(password_), nickname=nickname_, email=email_).count(), 1)
 
     def test_login(self):
         """

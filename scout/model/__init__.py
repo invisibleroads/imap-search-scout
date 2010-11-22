@@ -13,13 +13,13 @@ from scout.model.meta import Session, Base
 from scout.config import parameter
 
 
-# Set constants
+# constants
 xapian_date, xapian_privacy, xapian_messageTags, xapian_attachmentExtensions = xrange(4)
 action_hide = 0
 message_incomplete, message_ok, message_hide, message_show, message_delete = xrange(5)
 
 
-# Define methods
+# Methods
 
 def init_model(engine):
     'Call me before using any of the tables or classes in the model'
@@ -30,7 +30,7 @@ def hashString(string):
     return hashlib.sha256(string).digest()
 
 
-# Define tables
+# Tables
 
 people_table = sa.Table('people', Base.metadata,
     sa.Column('id', sa.Integer, primary_key=True),
@@ -38,7 +38,6 @@ people_table = sa.Table('people', Base.metadata,
     sa.Column('password_hash', sa.LargeBinary(32), nullable=False),
     sa.Column('nickname', sa.Unicode(parameter.NICKNAME_LENGTH_MAXIMUM), unique=True, nullable=False),
     sa.Column('email', sa.String(parameter.EMAIL_LENGTH_MAXIMUM), unique=True, nullable=False),
-    sa.Column('email_sms', sa.String(parameter.EMAIL_LENGTH_MAXIMUM)),
     sa.Column('minutes_offset', sa.Integer, default=0),
     sa.Column('rejection_count', sa.Integer, default=0),
     sa.Column('is_super', sa.Boolean, default=False),
@@ -51,10 +50,15 @@ person_candidates_table = sa.Table('person_candidates', Base.metadata,
     sa.Column('password_hash', sa.LargeBinary(32), nullable=False),
     sa.Column('nickname', sa.Unicode(parameter.NICKNAME_LENGTH_MAXIMUM), nullable=False),
     sa.Column('email', sa.String(parameter.EMAIL_LENGTH_MAXIMUM), nullable=False),
-    sa.Column('email_sms', sa.String(parameter.EMAIL_LENGTH_MAXIMUM)),
+    sa.Column('person_id', sa.ForeignKey('people.id')),
     sa.Column('ticket', sa.String(parameter.TICKET_LENGTH), unique=True, nullable=False),
     sa.Column('when_expired', sa.DateTime, nullable=False),
+)
+sms_addresses_table = sa.Table('sms_addresses', Base.metadata,
+    sa.Column('id', sa.Integer, primary_key=True),
+    sa.Column('email', sa.String(parameter.EMAIL_LENGTH_MAXIMUM), unique=True, nullable=False),
     sa.Column('person_id', sa.ForeignKey('people.id')),
+    sa.Column('is_active', sa.Boolean, default=False),
 )
 imap_accounts_table = sa.Table('imap_accounts', Base.metadata,
     sa.Column('id', sa.Integer, primary_key=True),
@@ -106,25 +110,34 @@ imap_message_attachment_extension_links_table = sa.Table('imap_message_attachmen
 )
 
 
-# Define classes
+# Classes
 
 class Person(object):
 
-    def __init__(self, username, password_hash, nickname, email, email_sms=''):
+    def __init__(self, username, password_hash, nickname, email):
         self.username = username
         self.password_hash = password_hash
         self.nickname = nickname
         self.email = email
-        self.email_sms = email_sms
 
     def __repr__(self):
-        return "<Person('%s')>" % self.username
+        return "<Person('%s')>" % self.email
 
 
 class PersonCandidate(Person):
 
     def __repr__(self):
-        return "<PersonCandidate('%s')>" % self.username
+        return "<PersonCandidate('%s')>" % self.email
+
+
+class SMSAddress(object):
+
+    def __init__(self, email, person_id):
+        self.email = email
+        self.person_id = person_id
+
+    def __repr__(self):
+        return "<SMSAddress('%s')>" % self.email
 
 
 class IMAPAccount(object):
@@ -231,22 +244,29 @@ class AttachmentExtension(object):
         return "<AttachmentExtension(%s)>" % (self.text)
 
 
-class CaseInsensitiveComparator(orm.properties.ColumnProperty.Comparator):
+class LowerCaseComparator(orm.properties.ColumnProperty.Comparator):
 
     def __eq__(self, other):
         return sa.func.lower(self.__clause_element__()) == sa.func.lower(other)
 
 
-# Map classes to tables
+# Links
 
 orm.mapper(Person, people_table, properties={
-    'username': orm.column_property(people_table.c.username, comparator_factory=CaseInsensitiveComparator),
-    'nickname': orm.column_property(people_table.c.nickname, comparator_factory=CaseInsensitiveComparator),
-    'email': orm.column_property(people_table.c.email, comparator_factory=CaseInsensitiveComparator),
-    'email_sms': orm.column_property(people_table.c.email_sms, comparator_factory=CaseInsensitiveComparator),
+    'username': orm.column_property(people_table.c.username, comparator_factory=LowerCaseComparator),
+    'nickname': orm.column_property(people_table.c.nickname, comparator_factory=LowerCaseComparator),
+    'email': orm.column_property(people_table.c.email, comparator_factory=LowerCaseComparator),
+    'sms_addresses': orm.relation(SMSAddress),
     'imap_accounts': orm.relation(IMAPAccount, backref='owner'),
 })
-orm.mapper(PersonCandidate, person_candidates_table)
+orm.mapper(PersonCandidate, person_candidates_table, properties={
+    'username': orm.column_property(person_candidates_table.c.username, comparator_factory=LowerCaseComparator),
+    'nickname': orm.column_property(person_candidates_table.c.nickname, comparator_factory=LowerCaseComparator),
+    'email': orm.column_property(person_candidates_table.c.email, comparator_factory=LowerCaseComparator),
+})
+orm.mapper(SMSAddress, sms_addresses_table, properties={
+    'email': orm.column_property(sms_addresses_table.c.email, comparator_factory=LowerCaseComparator),
+})
 orm.mapper(IMAPAccount, imap_accounts_table, properties={
     'messages': orm.relation(IMAPMessage, backref='imap_account'),
 })
