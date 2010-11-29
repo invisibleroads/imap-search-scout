@@ -151,15 +151,22 @@ class Message(object):
         headerParser = email.parser.HeaderParser()
         message = headerParser.parsestr(mimeString)
         # Define
-        def getWhom(name):
-            if not name in message: return ''
-            return pattern_whitespace.sub(' ', email.header.decode_header(message[name])[0][0])
+        def getX(x):
+            if not x in message:
+                return u''
+            stringRaw = message[x]
+            try:
+                string = email.header.decode_header(stringRaw)[0][0]
+            except email.header.HeaderParseError:
+                logging.debug("email.header.decode_header(message['%s']) failed: %s" % (x, stringRaw))
+                string = stringRaw
+            return mail_format.unicodeSafely(pattern_whitespace.sub(' ', string)).strip()
         # Extract fields
-        self.subject = mail_format.unicodeSafely(pattern_whitespace.sub(' ', email.header.decode_header(message['Subject'] if 'Subject' in message else '')[0][0])).strip()
-        self.fromWhom = mail_format.unicodeSafely(getWhom('From'))
-        self.toWhom = mail_format.unicodeSafely(getWhom('To'))
-        self.ccWhom = mail_format.unicodeSafely(getWhom('CC'))
-        self.bccWhom = mail_format.unicodeSafely(getWhom('BCC'))
+        self.subject = getX('Subject')
+        self.fromWhom = getX('From')
+        self.toWhom = getX('To')
+        self.ccWhom = getX('CC')
+        self.bccWhom = getX('BCC')
         self.when = datetime.datetime.fromtimestamp(time.mktime(email.Utils.parsedate_tz(message['Date'])[:9])) if 'Date' in message else None
         self.tags = map(mail_format.unicodeSafely, tagTexts)
 
