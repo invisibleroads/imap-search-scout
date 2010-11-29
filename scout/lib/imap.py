@@ -1,26 +1,41 @@
 'IMAP mailbox wrapper'
 # Import system modules
+import os; basePath = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+import logging; logging.basicConfig(filename=os.path.join(basePath, 'logs/mail.log'), level=logging.DEBUG)
+import imaplib
 import email
 import email.Utils
 import email.parser
 import email.header
 import mimetypes
 import datetime
-import imaplib
 import random
 import time
 import re
-import os
 # Import custom modules
 import mail_format
 
 
 # Set patterns
 pattern_whitespace = re.compile(r'\s+')
+pattern_ecre = re.compile(r'((=\?.*?\?[qb]\?).*\?=)', re.VERBOSE | re.IGNORECASE | re.MULTILINE)
+# Define methods
+def decodeSafely(x):
+    """
+    Handle malformed headers.
+    decodeSafely('=?UTF-8?B?MjAxMSBBVVRNIENBTEwgZm9yIE5PTUlO?==?UTF-8?B?QVRJT05TIG9mIFZQIGZvciBNZW1iZXJz?==?UTF-8?B?aGlw?=')
+    decodeSafely('"=?UTF-8?B?QVVUTSBIZWFkcXVhcnRlcnM=?="<info@autm.net>')
+    """
+    match = pattern_ecre.search(x)
+    if not match:
+        return x
+    string, encoding = match.groups()
+    stringBefore, string, stringAfter = x.partition(string)
+    return stringBefore + email.header.decode_header('%s%s==?=' % (encoding, string.replace(encoding, '').replace('?', '').replace('=', '')))[0][0] + stringAfter
 
 
-# Interface for IMAP4
 class Store(object):
+    'IMAP4 interface'
 
     # Connection
 
@@ -156,9 +171,9 @@ class Message(object):
                 return u''
             stringRaw = message[x]
             try:
-                string = email.header.decode_header(stringRaw)[0][0]
+                string = decodeSafely(stringRaw)
             except email.header.HeaderParseError:
-                logging.debug("email.header.decode_header(message['%s']) failed: %s" % (x, stringRaw))
+                logging.debug("decodeSafely(message['%s']) failed: %s", x, stringRaw)
                 string = stringRaw
             return mail_format.unicodeSafely(pattern_whitespace.sub(' ', string)).strip()
         # Extract fields
@@ -212,7 +227,7 @@ class Message(object):
             # Restore flags
             if isUnread:
                 self.markUnread()
-        except imaplib.IMAP4.abort:
+        except imaplib.IMAP4.abort, error:
             open('part000.txt', 'wt').write(str(error))
             return
         # Save parts
