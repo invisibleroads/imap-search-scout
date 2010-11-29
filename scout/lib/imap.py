@@ -18,20 +18,6 @@ import mail_format
 
 # Set patterns
 pattern_whitespace = re.compile(r'\s+')
-pattern_ecre = re.compile(r'((=\?.*?\?[qb]\?).*\?=)', re.VERBOSE | re.IGNORECASE | re.MULTILINE)
-# Define methods
-def decodeSafely(x):
-    """
-    Handle malformed headers.
-    decodeSafely('=?UTF-8?B?MjAxMSBBVVRNIENBTEwgZm9yIE5PTUlO?==?UTF-8?B?QVRJT05TIG9mIFZQIGZvciBNZW1iZXJz?==?UTF-8?B?aGlw?=')
-    decodeSafely('"=?UTF-8?B?QVVUTSBIZWFkcXVhcnRlcnM=?="<info@autm.net>')
-    """
-    match = pattern_ecre.search(x)
-    if not match:
-        return x
-    string, encoding = match.groups()
-    stringBefore, string, stringAfter = x.partition(string)
-    return stringBefore + email.header.decode_header('%s%s==?=' % (encoding, string.replace(encoding, '').replace('?', '').replace('=', '')))[0][0] + stringAfter
 
 
 class Store(object):
@@ -171,10 +157,13 @@ class Message(object):
                 return u''
             stringRaw = message[x]
             try:
-                string = decodeSafely(stringRaw)
+                string = email.header.decode_header(stringRaw)[0][0]
             except email.header.HeaderParseError:
-                logging.debug("decodeSafely(message['%s']) failed: %s", x, stringRaw)
-                string = stringRaw
+                try:
+                    string = email.header.decode_header(stringRaw.replace('?==?', '?= =?'))[0][0]
+                except email.header.HeaderParseError:
+                    logging.debug("decodeSafely(message['%s']) failed: %s", x, stringRaw)
+                    string = stringRaw
             return mail_format.unicodeSafely(pattern_whitespace.sub(' ', string)).strip()
         # Extract fields
         self.subject = getX('Subject')
