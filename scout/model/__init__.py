@@ -131,7 +131,7 @@ class PersonCandidate(Person):
 
 class SMSAddress(object):
 
-    def __init__(self, email, person_id):
+    def __init__(self, email, owner_id):
         self.email = email
         self.person_id = person_id
 

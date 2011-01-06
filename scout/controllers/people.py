@@ -55,7 +55,7 @@ class PeopleController(BaseController):
             # Set
             messageCode = 'expired'
         # Return
-        return redirect(url('person_login', targetURL=h.encodeURL('/'), messageCode=messageCode))
+        return redirect(url('person_login', url='/', messageCode=messageCode))
 
     @requireLogin
     def update(self):
@@ -105,10 +105,10 @@ class PeopleController(BaseController):
             # Send update confirmation email
             return changePerson(dict(request.POST), 'update', Session.query(model.Person).get(personID))
 
-    def login(self, targetURL=h.encodeURL('/')):
+    def login(self):
         'Show login form'
+        c.url = request.GET.get('url', '/')
         c.messageCode = request.GET.get('messageCode')
-        c.targetURL = h.decodeURL(targetURL)
         c.recaptchaPublicKey = config.get('recaptcha.public', '')
         return render('/people/login.mako')
 
@@ -155,7 +155,7 @@ class PeopleController(BaseController):
         # Return
         return dict(isOk=1)
 
-    def logout(self, targetURL=h.encodeURL('/')):
+    def logout(self):
         'Logout'
         # If the person is logged in,
         if h.isPerson():
@@ -165,7 +165,7 @@ class PeopleController(BaseController):
             del session['is_super']
             session.save()
         # Redirect
-        return redirect(url(h.decodeURL(targetURL)))
+        return redirect(request.GET.get('url', '/'))
 
     @jsonify
     def reset(self):

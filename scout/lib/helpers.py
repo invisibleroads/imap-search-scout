@@ -10,20 +10,11 @@ from scout.config.parameter import *
 from scout.lib import whenIO
 
 
-def encodeURL(x):
-    return x.replace('/', '~')
-
-def decodeURL(x):
-    return str(x.replace('~', '/'))
-
 def isPerson():
     return 1 if 'personID' in session else 0
 
 def isPersonSuper():
     return 1 if session.get('is_super', False) else 0
-
-def clipString(string, characterLimit=32):
-    return string[:characterLimit] + '...' if len(string) > characterLimit else string
 
 def getPersonID():
     return session.get('personID', 0)
@@ -41,3 +32,6 @@ def getRemoteIP():
     return request.environ.get('HTTP_X_REAL_IP', 
            request.environ.get('HTTP_X_FORWARDED_FOR', 
            request.environ.get('REMOTE_ADDR')))
+
+def clipString(string, characterLimit=32):
+    return string[:characterLimit] + '...' if len(string) > characterLimit else string
