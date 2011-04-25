@@ -1,36 +1,62 @@
-"""
-Pylons application test package
+'Test templates'
+import os
+import webtest
+import shutil
+import unittest
+import tempfile
+import simplejson
+import transaction
+from ConfigParser import ConfigParser
 
-This package assumes the Pylons environment is already loaded, such as
-when this script is imported from the `nosetests --with-pylons=test.ini`
-command.
-
-This module initializes the application via ``websetup`` (`paster
-setup-app`) and provides the base testing objects.
-"""
-# Import pylons modules
-from pylons import url
-from paste.deploy import loadapp
-from paste.script.appinstall import SetupCommand
-from routes.util import URLGenerator
-# Import system modules
-from unittest import TestCase
-from webtest import TestApp
-# Import custom modules
-import pylons.test
+from scout import main
+from scout.models import db, User
+from scout.libraries.tools import hash_string
 
 
-__all__ = ['environ', 'url', 'TestController']
-# Invoke websetup with the current config file
-SetupCommand('setup-app').run([pylons.test.pylonsapp.config['__file__']])
-environ = {}
+temporaryFolder = tempfile.mkdtemp()
 
 
-class TestController(TestCase):
+class TestTemplate(unittest.TestCase):
 
-    def __init__(self, *args, **kwargs):
-        wsgiapp = pylons.test.pylonsapp
-        config = wsgiapp.config
-        self.app = TestApp(wsgiapp)
-        url._push_object(URLGenerator(config['routes.map'], environ))
-        TestCase.__init__(self, *args, **kwargs)
+    router = main({}, **{
+        'sqlalchemy.url': 'sqlite://',
+        'mail.queue_path': os.path.join(temporaryFolder, 'mail'),
+        'mail.default_sender': 'scout <support@example.com>',
+    })
+
+    def setUp(self):
+        # Initialize functional test framework
+        self.app = webtest.TestApp(self.router)
+        self.logout()
+        if not os.path.exists(temporaryFolder):
+            os.mkdir(temporaryFolder)
+        # Reset users
+        self.userS = {'username': 'super', 'password': 'passwordS', 'nickname': u'SuperSuper', 'email': 'super@example.com'}
+        self.userN = {'username': 'normal', 'password': 'passwordN', 'nickname': u'NormalUser', 'email': 'normal@example.com'}
+        for userIndex, valueByKey in enumerate([self.userS, self.userN], 1):
+            username, password, nickname, email = [valueByKey.get(x) for x in 'username', 'password', 'nickname', 'email']
+            db.merge(User(id=userIndex, username=username, password_hash=hash_string(password), nickname=nickname, email=email, is_super=userIndex % 2))
+        transaction.commit()
+
+    def tearDown(self):
+        shutil.rmtree(temporaryFolder)
+
+    def get_url(self, name, **kw):
+        'Return URL for route'
+        return self.router.routes_mapper.generate(name, kw)
+
+    def login(self, userD):
+        'Login using credentials'
+        return self.app.post(self.get_url('user_login'), userD)
+
+    def logout(self):
+        'Logout'
+        return self.app.post(self.get_url('user_logout'))
+
+    def assertJSON(self, response, isOk):
+        'Assert response JSON'
+        responseData = simplejson.loads(response.body)
+        if responseData['isOk'] != isOk:
+            print responseData
+        self.assertEqual(responseData['isOk'], isOk)
+        return responseData

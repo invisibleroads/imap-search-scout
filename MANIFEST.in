@@ -1,4 +1,2 @@
-include default.cfg
-include development.ini production.ini test.ini
-recursive-include scout/public *
-recursive-include scout/templates *
+include *.txt *.ini *.cfg *.rst
+recursive-include scout *.ico *.png *.css *.gif *.jpg *.pt *.txt *.mak *.mako *.js *.html *.xml

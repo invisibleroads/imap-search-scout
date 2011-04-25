@@ -1,12 +1,4 @@
-# Apply rules every hour
-0 * * * * cd /home/${WEBFACTION-USER}/webapps/scout;/usr/local/bin/python2.6 utilities/comb.py -c production.ini >> mail.log 2>&1
-# Perform a thorough cleaning once a day at 6:30am
-30 6 * * * cd /home/${WEBFACTION-USER}/webapps/scout;/usr/local/bin/python2.6 utilities/clean.py -c production.ini >> mail.log 2>&1
-# Check entire mailboxes twice a day at 7:30am and 7:30pm 
-30 7,19 * * * kill -9 `ps -u ${WEBFACTION-USER} -o rss,etime,pid,command | grep "archive.py -c production.ini" | grep -v grep | awk '{print $3}'`;export XAPIAN_FLUSH_THRESHOLD=1000;cd /home/${WEBFACTION-USER}/webapps/scout;/usr/local/bin/python2.6 utilities/archive.py -c production.ini -n 100 >> mail.log 2>&1
-# Check inboxes every day five times an hour from 8am until 6pm
-10,20,30,40,50 8-18 * * * export XAPIAN_FLUSH_THRESHOLD=1000;cd /home/${WEBFACTION-USER}/webapps/scout;/usr/local/bin/python2.6 utilities/archive.py -c production.ini -n 100 inbox >> mail.log 2>&1
 # Start server every twenty minutes
-7,27,47 * * * * cd /home/${WEBFACTION-USER}/webapps/scout;/home/${WEBFACTION-USER}/bin/paster serve --daemon production.ini > /dev/null
-# Check and send text messages every fifteen minutes
-10,25,40,55 * * * * cd /home/${WEBFACTION-USER}/webapps/scout;/usr/local/bin/python2.6 utilities/sms.py -c production.ini >> mail.log 2>&1
+15,35,55 * * * * cd /var/www/virtualenv/scout;source ../bin/activate;paster serve --daemon production.ini >> /dev/null 2>&1
+# Check outbox every minute
+* * * * * cd /var/www/virtualenv/scout;source ../bin/activate;qp data/mail --config .production.ini >> /dev/null 2>&1
