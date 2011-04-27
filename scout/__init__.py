@@ -10,7 +10,7 @@ import os
 
 from scout.libraries import tools
 from scout.models import initialize_sql
-from scout.views import pages, users
+from scout.views import pages, users, accounts
 from scout.parameters import *
 
 
@@ -77,11 +77,22 @@ def main(global_config, **settings):
     # Configure static assets
     config.add_static_view('static', 'scout:static')
     # Configure routes for user account management
-    config.scan(users)
     config.include(users)
     # Configure routes that demonstrate access control
-    config.scan(pages)
     config.include(pages)
+    # Configure routes for IMAP accounts
+    config.include(accounts)
+    # Configure routes for IMAP messages
+    # map.connect('message_index', '/', controller='messages', action='index')
+    # map.connect('message_search', '/search', controller='messages', action='search')
+    # map.connect('message_update', '/{documentID}/update', controller='messages', action='update')
+    # map.connect('message_revive', '/{documentID}/revive', controller='messages', action='revive') 
+    # map.connect('message_download', '/{documentID}/download', controller='messages', action='download')
+    # map.connect('message_download_file', '/{documentID}/download/{fileIndex}', controller='messages', action='download')
+    # Configure routes for IMAP rules
+    # map.connect('rule_index', '/rules', controller='rules', action='index')
+    # map.connect('rule_add', '/rules/add', controller='rules', action='add')
+    # map.connect('rule_remove', '/rules/remove', controller='rules', action='remove')
     # Return WSGI app
     return config.make_wsgi_app()
 

@@ -3,9 +3,9 @@ IMAP email search and storage system
 
 
 Installation
-------------
+-------------
 ::
-
+ 
     # Prepare isolated environment
     PYRAMID_ENV=$HOME/pyramid-env
     virtualenv --no-site-packages $PYRAMID_ENV 
@@ -20,8 +20,8 @@ Installation
     cd $PROJECTS/imap-search-scout
     # Install dependencies
     python setup.py develop
-
-
+ 
+ 
 Usage
 -----
 ::

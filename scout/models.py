@@ -5,6 +5,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import scoped_session, sessionmaker, relationship, column_property
 from sqlalchemy.orm.properties import ColumnProperty
 from zope.sqlalchemy import ZopeTransactionExtension
+from Crypto.Cipher import AES
 
 from scout.libraries.tools import hash_string, make_random_string
 from scout.parameters import *
@@ -84,6 +85,28 @@ class SMSAddress(Base):
 
     def __repr__(self):
         return "<SMSAddress('%s')>" % self.email
+
+
+class IMAPAccount(Base):
+    'An IMAP account'
+    __tablename__ = 'imap_accounts'
+    __table_args__ = (UniqueConstraint('host', 'username'), {})
+    host = Column(String(HOST_LEN_MAX))
+    username = Column(String(USERNAME_LEN_MAX))
+    password = Column(LargeBinary(PASSWORD_LEN_MAX))
+    is_active = Column(Boolean, default=True)
+    user_id = Column(ForeignKey('users.id'))
+    when_archived_inbox = Column(DateTime)
+    when_archived_total = Column(DateTime)
+
+    def __repr__(self):
+        return "<IMAPAccount('%s@%s')>" % (self.username, self.host)
+
+    def set_password(self, string):
+        pass
+
+    def get_password(self):
+        pass
 
 
 def initialize_sql(engine):
