@@ -1,4 +1,5 @@
-0.0
----
+0.9.0
+-----
 
-- Started project
+- Restarted project from invisibleroads-templates 1.7.2
+- Added models.IMAPAccount

@@ -10,7 +10,7 @@ import os
 
 from scout.libraries import tools
 from scout.models import initialize_sql
-from scout.views import pages, users, accounts
+from scout.views import pages, users, accounts, messages, searches
 from scout.parameters import *
 
 
@@ -24,7 +24,9 @@ def main(global_config, **settings):
             for section in configParser.sections():
                 settings.update(configParser.items(section))
     if 'hashlib.secret' in settings:
-        tools.secret = settings['hashlib.secret']
+        tools.secret1 = settings['hashlib.secret']
+    if 'ciphers.secret' in settings:
+        tools.secret2 = settings['ciphers.secret']
     # Connect to database
     initialize_sql(engine_from_config(settings, 'sqlalchemy.'))
     # Define methods
@@ -48,7 +50,7 @@ def main(global_config, **settings):
             USER_ID=userID,
             USER_NICKNAME=nickname,
             USER_OFFSET=offset,
-            USER_GROUPS=groups)
+            IS_SUPER='s' in groups)
     # Prepare configuration
     if 'authtkt.secret' not in settings:
         settings['authtkt.secret'] = tools.make_random_string(SECRET_LEN)
@@ -83,16 +85,9 @@ def main(global_config, **settings):
     # Configure routes for IMAP accounts
     config.include(accounts)
     # Configure routes for IMAP messages
-    # map.connect('message_index', '/', controller='messages', action='index')
-    # map.connect('message_search', '/search', controller='messages', action='search')
-    # map.connect('message_update', '/{documentID}/update', controller='messages', action='update')
-    # map.connect('message_revive', '/{documentID}/revive', controller='messages', action='revive') 
-    # map.connect('message_download', '/{documentID}/download', controller='messages', action='download')
-    # map.connect('message_download_file', '/{documentID}/download/{fileIndex}', controller='messages', action='download')
-    # Configure routes for IMAP rules
-    # map.connect('rule_index', '/rules', controller='rules', action='index')
-    # map.connect('rule_add', '/rules/add', controller='rules', action='add')
-    # map.connect('rule_remove', '/rules/remove', controller='rules', action='remove')
+    config.include(messages)
+    # Configure routes for IMAP searches
+    config.include(searches)
     # Return WSGI app
     return config.make_wsgi_app()
 
@@ -101,7 +96,7 @@ class RootFactory(object):
     'Permission definitions'
     __acl__ = [ 
         (Allow, Authenticated, 'protected'),
-        (Allow, 'x', 'privileged'),
+        (Allow, 's', 'privileged'),
     ]
 
     def __init__(self, request):

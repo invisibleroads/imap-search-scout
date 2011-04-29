@@ -14,12 +14,13 @@
 	<div id=navigation>${self.navigation()}
 	<%
 	path = request.path
-	linkPacks = [
-		('Home', '/'),
-		('Users', request.route_path('user_index')),
-	]
+	linkPacks = []
 	if USER_ID:
-		linkPacks.append((USER_NICKNAME, request.route_path('user_update')))
+		linkPacks.extend([
+			('Accounts', request.route_path('account_index')),
+			('Users', request.route_path('user_index')),
+			(USER_NICKNAME, request.route_path('user_update')),
+		])
 	%>
 % for linkName, linkPath in linkPacks:
 	&nbsp;
@@ -50,6 +51,22 @@ ${self.root()}
 	});
 	function getNumber(x) {return /\d+/.exec(x)[0]}
 	function getID(obj) {return getNumber(obj.id)}
+    function ajax(type, url, data, callback) {
+        $.ajax({
+            type: type,
+            url: url,
+            data: data,
+            dataType: 'json',
+            success: callback,
+            error: function(jqXHR, textStatus, errorThrown) {
+                if (textStatus == 'parsererror') {
+                    window.location = "${request.route_path('user_login')}?url=" + window.location.pathname;
+                }
+            }
+        });
+    }
+    function get(url, data, callback) {return ajax('GET', url, data, callback)}
+    function post(url, data, callback) {return ajax('POST', url, data, callback)}
 	${self.js()}
 </script>
 </body>

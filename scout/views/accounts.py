@@ -1,4 +1,4 @@
-'Views for IMAP account management'
+'Views for IMAP accounts'
 from pyramid.view import view_config
 
 
@@ -21,4 +21,4 @@ def index(request):
         # imapAccountQuery = imapAccountQuery.outerjoin((statement, model.IMAPAccount.id==statement.c.imap_account_id))
     # c.imapAccounts = imapAccountQuery.all()
     # c.people = Session.query(model.Person).order_by(model.Person.is_active.desc(), model.Person.id)
-    # return render('/accounts/index.mako')
+    return dict()

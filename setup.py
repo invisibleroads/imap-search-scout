@@ -1,12 +1,12 @@
 import os
 import sys
-from setuptools import setup, find_packages
 
-from scout.parameters import SITE_VERSION
+from setuptools import setup, find_packages
 
 
 requires = [
     'formencode',
+    'pycrypto',
     'pyramid',
     'pyramid_beaker',
     'pyramid_mailer',
@@ -37,7 +37,7 @@ CHANGES = open(os.path.join(here, 'CHANGES.rst')).read()
 
 setup(
     name='scout',
-    version=SITE_VERSION,
+    version='0.0',
     description='scout',
     long_description=README + '\n\n' +  CHANGES,
     classifiers=[
