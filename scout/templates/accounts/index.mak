@@ -1,8 +1,12 @@
 <%inherit file='/base.mak'/>
+<%namespace name='form' file='/form.mak'/>
 
 <%def name='title()'>IMAP Accounts</%def>
 
 <%def name='css()'>
+.left {text-align: left}
+.right {text-align: right}
+th.right {padding-right: 20px}
 </%def>
 
 <%def name='toolbar()'>IMAP Accounts</%def>
@@ -14,33 +18,106 @@
 </%def>
 
 <%def name='js()'>
+$('#accountAdd').click(function() {
+	// Lock controls
+	$('.lockOnSave').attr('disabled', 'disabled');
+
+	// Load
+	var accountUserID = $('#accountUserID').val();
+	var accountHost = $.trim($('#accountHost').val());
+	var accountUsername = $.trim($('#accountUsername').val());
+	var accountPassword = $('#accountPassword').val();
+	var accountStatus = 'Testing...';
+	var accountFocus;
+
+	// Check for errors
+	if (!accountUsername) {
+		accountStatus = 'Username required';
+		accountFocus = $('#accountUsername');
+	}
+	if (!accountHost) {
+		accountStatus = 'Host required';
+		accountFocus = $('#accountHost');
+	}
+	$('#accountStatus').html(accountStatus);
+	if (accountFocus) {
+		$('.lockOnSave').removeAttr('disabled');
+		accountFocus.focus();
+		return;
+	}
+
+	// Add account
+	post("${request.route_path('account_add')}", {
+		token: token,
+		accountUserID: accountUserID,
+		accountHost: accountHost,
+		accountUsername: accountUsername,
+		accountPassword: accountPassword
+	}, function(data) {
+		$('.lockOnSave').removeAttr('disabled');
+		if (data.isOk) {
+			$('#imapAccounts').html(data.content);
+		} else {
+			$('#accountStatus').html(data.message);
+		}
+	});
+});
+
+function computeTableHeight() {return $(window).height() - 100}
+var imapAccountsTable = $('#imapAccounts').dataTable({
+	'bInfo': false,
+	'bPaginate': false,
+	'oLanguage': {'sSearch': 'Filter'},
+	'sScrollY': computeTableHeight()
+});
+$(window).bind('resize', function() {
+	$('.dataTables_scrollBody').height(computeTableHeight());
+	imapAccountsTable.fnAdjustColumnSizing();
+});
+$('.dataTables_filter input').focus();
 </%def>
 
 <%!
 import whenIO
 %>
 
-<table>
+<table id=imapAccounts>
 	<thead>
 		<tr>
-			<th>Host</th>
-			<th>Username</th>
-		<tr>
+			<th class=left>User</th>
+			<th class=left>Host</th>
+			<th class=left>Username</th>
+			<th class=left>Password</th>
+			<th class=right>Action</th>
+			<th class=right>Status</th>
+			<th class=right>Archived Inbox</th>
+			<th class=right>Archived Total</th>
+			<th class=right>Statistics</th>
+		</tr>
 	</thead>
 	<tbody>
-	% for imapAccount in imapAccounts:
+	% if IS_SUPER:
 		<tr>
-			<td>${imapAccount.host}</td>
-			<td>${imapAccount.username}</td>
-		<tr>
-	% endfor
+			<td class=left>${form.formatSelect('accountUserID', USER_ID, personPacks)}</td>
+			<td class=left><input id=accountHost class=lockOnSave></td>
+			<td class=left><input id=accountUsername class=lockOnSave></td>
+			<td class=left><input id=accountPassword class=lockOnSave type=password></td>
+			<td class=right><input id=accountAdd class=lockOnSave type=button value=Add></td>
+			<td class=right id=accountStatus></span></td>
+			<td class=right></td>
+			<td class=right></td>
+			<td class=right></td>
+		</tr>
+	% endif
+	</tbody>
+	<tbody id=imapAccounts>
+		<%include file='accounts.mak'/>
 	</tbody>
 </table>
 
 
 <%doc>
 <%def name="css()">
-.right {text-align: right}
 .deactivated {color: gray}
 .passwordInput {display: none}
 </%def>
@@ -119,62 +196,16 @@ $('.passwordInput').blur(function() {
         }
     }, 'json');
 });
-$('#accountAdd').click(function() {
-    // Lock
-    $('.lockOnSave').attr('disabled', 'disabled');
-    // Load
-    var ownerID = $('#accountOwnerID').val(),
-        host = $.trim($('#accountHost').val())
-        username = $.trim($('#accountUsername').val()),
-        password = $('#accountPassword').val();
-    // Show feedback
-    $('#accountStatus').html('Testing...');
-    // If the user entered a value for each field,
-    if (ownerID > 0 && host && username && password) {
-        $.post("${h.url('account_add')}", {
-            ownerID: ownerID,
-            host: host,
-            username: username,
-            password: password
-        }, function(data) {
-            if (data.isOk) {
-                window.location.reload();
-            } else {
-                $('#accountStatus').html('Please check credentials');
-            }
-        });
-    } else {
-        $('#accountStatus').html('All fields are required');
-    }
-    // Unlock
-    $('.lockOnSave').removeAttr('disabled');
-    // Focus
-    $('#accountOwnerID').focus();
-});
 </%def>
 
-<%
-import datetime
-from scout import model
-from scout.model import Session
-personID = h.getPersonID()
-%>
 <table>
-    <tr>
-        <td><b>Owner</b></td>
-        <td><b>Password</b></td>
-        <td><b>Action</b></td>
-        <td><b>Archived</b></td>
-        <td class=right><b>Statistics</b></td>
-        <td class=right><b>Status</b></td>
-    </tr>
 % for imapAccount, imapMessageCount in c.imapAccounts:
 <%
     divID = 'account%d' % imapAccount.id
     userCanUpdate = h.isPersonSuper() or personID == imapAccount.owner_id
 %>
     <tr id=${divID} class=${'' if imapAccount.is_active else 'deactivated'}>
-        <td>${('%s' if imapAccount.owner.is_active else '<s>%s</s>') % imapAccount.owner.nickname}</td>
+
         <td>
         % if userCanUpdate:
             <input id=${divID}PasswordChange class=passwordChange type=button value=Change>
@@ -193,24 +224,5 @@ personID = h.getPersonID()
         <td id=${divID}Status class=right></td>
     </tr>
 % endfor
-% if h.isPersonSuper():
-    <tr>
-        <td>
-            <select id=accountOwnerID class=lockOnSave>
-                <option value=0></option>
-            % for person in c.people:
-                <option value=${person.id}>${person.nickname}</option>
-            % endfor
-            </select>
-        </td>
-        <td><input id=accountHost class=lockOnSave></td>
-        <td><input id=accountUsername class=lockOnSave></td>
-        <td><input id=accountPassword type=password class=lockOnSave></td>
-        <td class=center><input id=accountAdd type=button value=Add class=lockOnSave></td>
-        <td colspan=3 id=accountStatus></td>
-    </tr>
-% endif
 </table>
-
-
 </%doc>

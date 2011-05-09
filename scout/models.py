@@ -69,6 +69,7 @@ class User(Base):
         comparator_factory=CaseInsensitiveComparator)
     email = Column(LowercaseEncrypted(EMAIL_LEN_MAX * 2), unique=True)
     is_super = Column(Boolean, default=False)
+    is_active = Column(Boolean, default=True)
     rejection_count = Column(Integer, default=0)
     offset = Column(Integer, default=0)
     when_login = Column(DateTime)
@@ -112,6 +113,24 @@ class SMSAddress(Base):
 
     def __str__(self):
         return "<SMSAddress(id=%s)>" % self.id
+
+
+class IMAPAccount(Base):
+    'An IMAP account'
+    __tablename__ = 'imap_accounts'
+    __table_args__ = (UniqueConstraint('host', 'username'), {})
+    id = Column(Integer, primary_key=True)
+    user = relationship('User')
+    user_id = Column(ForeignKey('users.id'))
+    host = Column(Unicode(HOST_LEN_MAX))
+    username = Column(Unicode(USERNAME_LEN_MAX))
+    password = Column(Encrypted(PASSWORD_LEN_MAX * 2))
+    is_active = Column(Boolean, default=True)
+    when_archived_inbox = Column(DateTime)
+    when_archived_total = Column(DateTime)
+
+    def __str__(self):
+        return "<IMAPAccount(id=%s)>" % self.id
 
 
 def initialize_sql(engine):
