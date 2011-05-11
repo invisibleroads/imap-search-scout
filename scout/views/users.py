@@ -242,7 +242,7 @@ def reset(request):
 
 def format_tokens(user):
     'Format user information into a cookie'
-    nickname = 'x' + base64.urlsafe_b64encode(user.nickname.encode('utf8')).replace('=', '+')
+    nickname = 'x' + base64.urlsafe_b64encode(user.nickname.encode('utf-8')).replace('=', '+')
     offset = 'x' + str(user.offset)
     groups = user.groups
     return [nickname, offset] + groups
@@ -250,7 +250,7 @@ def format_tokens(user):
 
 def parse_tokens(tokens):
     'Parse user information from a cookie'
-    nickname = base64.urlsafe_b64decode(tokens[0][1:].replace('+', '=')).decode('utf8')
+    nickname = base64.urlsafe_b64decode(tokens[0][1:].replace('+', '=')).decode('utf-8')
     offset = int(tokens[1][1:])
     groups = tokens[2:]
     return nickname, offset, groups
