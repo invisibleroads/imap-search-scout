@@ -120,7 +120,7 @@ def has(server, message):
     # Without a date, I cannot easily test for duplicates
     if not whenLocal:
         return False
-    excludes = filter(lambda x: x.startswith('"[Gmail]'), revive.targetServer.folders) # Exclude virtual Gmail folders
+    excludes = filter(lambda x: x.startswith('"[Gmail]'), server.folders) # Exclude virtual Gmail folders
     searchCriterion = 'FROM "%s" SENTON "%s"' % (parseaddr(messageFrom)[1], whenLocal.strftime('%d-%b-%Y'))
     messageGenerator = server.walk(excludes=excludes, searchCriterion=searchCriterion)
     for m in messageGenerator:
