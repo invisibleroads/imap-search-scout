@@ -120,7 +120,7 @@ def has(server, message):
     # Without a date, I cannot easily test for duplicates
     if not whenLocal:
         return False
-    excludes = filter(lambda x: x.startswith('[['), server.folders) # Exclude special Gmail folders
+    excludes = filter(lambda x: x.startswith('"[Gmail]'), revive.targetServer.folders) # Exclude virtual Gmail folders
     searchCriterion = 'FROM "%s" SENTON "%s"' % (parseaddr(messageFrom)[1], whenLocal.strftime('%d-%b-%Y'))
     messageGenerator = server.walk(excludes=excludes, searchCriterion=searchCriterion)
     for m in messageGenerator:
@@ -146,71 +146,70 @@ def record(message):
     db.commit()
 
 
-if '__main__' == __name__:
-    # Parse arguments and load configuration file
-    args = parse_args()
-    configParser = ConfigParser()
+# Parse arguments and load configuration file
+args = parse_args()
+configParser = ConfigParser()
+try:
+    configParser.read(args.configurationPath)
+    configParser.read('.' + args.configurationPath)
+except Exception, error:
+    print 'Could not parse %s' % args.configurationPath
+    print error
+    sys.exit(1)
+def send_feedback(x):
+    if args.verbose:
+        print x
+# Make sure only one instance of this script is running
+section, portlock = 'app:portlock', 'revive'
+try:
+    portString = configParser.get(section, portlock)
+except (NoSectionError, NoOptionError):
+    print ('To ensure that only one instance of this script is running, '
+            "specify a unique port number for '%s' in '%s'" % (portlock, section))
+else:
+    port = parse_port(portString)
     try:
-        configParser.read(args.configurationPath)
-        configParser.read('.' + args.configurationPath)
-    except Exception, error:
-        print 'Could not parse %s' % args.configurationPath
-        print error
+        SOCKET.bind(('', port))
+    except socket.error:
         sys.exit(1)
-    def send_feedback(x):
-        if args.verbose:
-            print x
-    # Make sure only one instance of this script is running
-    section, portlock = 'app:portlock', 'revive'
-    try:
-        portString = configParser.get(section, portlock)
-    except (NoSectionError, NoOptionError):
-        print ('To ensure that only one instance of this script is running, '
-                "specify a unique port number for '%s' in '%s'" % (portlock, section))
-    else:
-        port = parse_port(portString)
-        try:
-            SOCKET.bind(('', port))
-        except socket.error:
-            sys.exit(1)
-    # Connect to IMAP servers
-    log = logging.getLogger('imapIO')
-    log.addHandler(logging.StreamHandler())
-    try:
-        sourceParameterByKey = load_parameterByKey('source', configParser)
-        targetParameterByKey = load_parameterByKey('target', configParser)
-    except ApplicationError, error:
-        print error
-        sys.exit(1)
-    try:
-        send_feedback('Connecting to source server')
-        sourceServer = connect(sourceParameterByKey)
-        send_feedback('Connecting to target server')
-        targetServer = connect(targetParameterByKey)
-    except IMAPError, error:
-        print error
-        sys.exit(1)
-    # Prepare database
-    engine = create_engine('sqlite:///%(username)s@%(host)s.db' % sourceParameterByKey)
-    db.configure(bind=engine)
-    Base.metadata.bind = engine
-    Base.metadata.create_all(engine)
-    # Get most recent scan date
-    if args.incremental:
-        result = db.query(Message.date).order_by(Message.date.desc()).first()
-        searchCriterion = 'SINCE %s' % result[0].strftime('%d-%b-%Y') if result else ''
-        send_feedback(searchCriterion)
-    else:
-        searchCriterion = ''
-    # Load a message from the source mailbox
-    for email in sourceServer.walk(searchCriterion=searchCriterion):
-        # If we already have a record of this email,
-        if has_record(email):
-            continue
-        # If the message does not exist in the target mailbox,
-        if not has(targetServer, email):
-            send_feedback(email['subject'].encode('utf-8'))
-            # Revive message in target mailbox
-            targetServer.revive(email.folder, email)
-            # Record email in our local database
-            record(email)
+# Connect to IMAP servers
+log = logging.getLogger('imapIO')
+log.addHandler(logging.StreamHandler())
+try:
+    sourceParameterByKey = load_parameterByKey('source', configParser)
+    targetParameterByKey = load_parameterByKey('target', configParser)
+except ApplicationError, error:
+    print error
+    sys.exit(1)
+try:
+    send_feedback('Connecting to source server')
+    sourceServer = connect(sourceParameterByKey)
+    send_feedback('Connecting to target server')
+    targetServer = connect(targetParameterByKey)
+except IMAPError, error:
+    print error
+    sys.exit(1)
+# Prepare database
+engine = create_engine('sqlite:///%(username)s@%(host)s.db' % sourceParameterByKey)
+db.configure(bind=engine)
+Base.metadata.bind = engine
+Base.metadata.create_all(engine)
+# Get most recent scan date
+if args.incremental:
+    result = db.query(Message.date).order_by(Message.date.desc()).first()
+    searchCriterion = 'SINCE %s' % result[0].strftime('%d-%b-%Y') if result else ''
+    send_feedback(searchCriterion)
+else:
+    searchCriterion = ''
+# Load a message from the source mailbox
+for email in sourceServer.walk(searchCriterion=searchCriterion):
+    # If we already have a record of this email,
+    if has_record(email):
+        continue
+    # If the message does not exist in the target mailbox,
+    if not has(targetServer, email):
+        send_feedback(email['subject'].encode('utf-8'))
+        # Revive message in target mailbox
+        targetServer.revive(email.folder, email)
+        # Record email in our local database
+        record(email)
