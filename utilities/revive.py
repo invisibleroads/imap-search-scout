@@ -1,10 +1,12 @@
+import re
 import os
 import sys
+import socket
 import logging
 import datetime
 from argparse import ArgumentParser
 from calendar import timegm
-from ConfigParser import ConfigParser, NoSectionError
+from ConfigParser import ConfigParser, NoSectionError, NoOptionError
 from email.utils import mktime_tz, parseaddr, parsedate_tz
 from formencode import Invalid, Schema, validators
 from imapIO import IMAP4, IMAP4_SSL, IMAPError
@@ -19,6 +21,8 @@ SCRIPT_NAME = os.path.splitext(os.path.basename(__file__))[0]
 DESCRIPTION = 'Revive messages from source mailbox to target mailbox'
 RAW_FROM_LEN_MAX = 32
 RAW_DATE_LEN_MAX = 32
+SOCKET = socket.socket()
+PATTERN_PORT = re.compile(r'(\d+)')
 
 
 Base = declarative_base()
@@ -91,6 +95,15 @@ def connect(parameterByKey):
         parameterByKey['password'])
 
 
+def parse_port(portString):
+    'Convert string to integer while ignoring other text such as comments'
+    match = PATTERN_PORT.search(portString)
+    try:
+        return int(match.group(1))
+    except AttributeError:
+        raise ValueError('Could not parse port=%s' % portString)
+
+
 def parse_whenLocal(message):
     timePack = parsedate_tz(message['date'])
     if not timePack:
@@ -134,8 +147,7 @@ def record(message):
 
 
 if '__main__' == __name__:
-
-
+    # Parse arguments and load configuration file
     args = parse_args()
     configParser = ConfigParser()
     try:
@@ -145,42 +157,51 @@ if '__main__' == __name__:
         print 'Could not parse %s' % args.configurationPath
         print error
         sys.exit(1)
+    # Make sure only one instance of this script is running
+    section, portlock = 'app:portlock', 'revive'
+    try:
+        portString = configParser.get(section, portlock)
+    except (NoSectionError, NoOptionError):
+        print ('To ensure that only one instance of this script is running, '
+                "specify a unique port number for '%s' in '%s'" % (portlock, section))
+    else:
+        port = parse_port(portString)
+        try:
+            SOCKET.bind(('', port))
+        except socket.error:
+            sys.exit(1)
+    # Connect to IMAP servers
+    log = logging.getLogger('imapIO')
+    log.addHandler(logging.StreamHandler())
     try:
         sourceParameterByKey = load_parameterByKey('source', configParser)
         targetParameterByKey = load_parameterByKey('target', configParser)
     except ApplicationError, error:
         print error
         sys.exit(1)
-
-
-    log = logging.getLogger('imapIO')
-    log.addHandler(logging.StreamHandler())
     try:
         sourceServer = connect(sourceParameterByKey)
         targetServer = connect(targetParameterByKey)
     except IMAPError, error:
         print error
         sys.exit(1)
-
-
+    # Prepare database
     engine = create_engine('sqlite:///%(username)s@%(host)s.db' % sourceParameterByKey)
     db.configure(bind=engine)
     Base.metadata.bind = engine
     Base.metadata.create_all(engine)
-
-
-    # Get most recent
+    # Get most recent scan date
     result = db.query(Message.date).order_by(Message.date.desc()).first()
     searchCriterion = 'SINCE %s' % result[0].strftime('%d-%b-%Y') if result and args.incremental else ''
     # Load a message from the source mailbox
-    for email in sourceServer.walk(searchCriterion=searchCriterion):
+    # for email in sourceServer.walk(searchCriterion=searchCriterion):
         # If we already have a record of this email,
-        if has_record(email):
-            continue
+        # if has_record(email):
+            # continue
         # If the message does not exist in the target mailbox,
-        if not has(targetServer, email):
-            print email['subject'].encode('utf-8')
-            # Revive message in target mailbox
-            targetServer.revive(email.folder, email)
-            # Record email in our local database
-            record(email)
+        # if not has(targetServer, email):
+            # print email['subject'].encode('utf-8')
+            # # Revive message in target mailbox
+            # targetServer.revive(email.folder, email)
+            # # Record email in our local database
+            # record(email)
