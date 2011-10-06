@@ -120,8 +120,9 @@ def has(server, message):
     # Without a date, I cannot easily test for duplicates
     if not whenLocal:
         return False
+    excludes = filter(lambda x: x.startswith('[['), server.folders) # Exclude special Gmail folders
     searchCriterion = 'FROM "%s" SENTON "%s"' % (parseaddr(messageFrom)[1], whenLocal.strftime('%d-%b-%Y'))
-    messageGenerator = server.walk(searchCriterion=searchCriterion)
+    messageGenerator = server.walk(excludes=excludes, searchCriterion=searchCriterion)
     for m in messageGenerator:
         if m['date'] == messageDate:
             return True
