@@ -122,7 +122,7 @@ for result in messageQuery:
         print '[exists]'
     else:
         messageDate = message['date']
-        r, data = imapServer.append('inbox', '', mktime_tz(parsedate_tz(messageDate)) if messageDate else None, message)
+        r, data = imapServer.append('inbox', '', mktime_tz(parsedate_tz(messageDate)) if messageDate else None, message.as_string())
         if r != 'OK':
             raise Exception(data)
         print '[ok]'
