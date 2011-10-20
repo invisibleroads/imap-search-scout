@@ -109,11 +109,11 @@ for result in messageQuery:
             'To': headerByName['toWhom'],
             'CC': headerByName['ccWhom'],
             'BCC': headerByName['bccWhom'],
-            'Subject': headerByName['subject'],
+            'Subject': headerByName['subject'].replace(chr(0), ''),
         },  
         when=headerByName['when'],
-        bodyText='\n\n'.join(bodyTexts),
-        bodyHtml='<br><br>'.join(bodyHtmls),
+        bodyText='\n\n'.join(bodyTexts).replace(chr(0), ''),
+        bodyHtml='<br><br>'.join(bodyHtmls).replace(chr(0), ''),
         attachmentPaths=[os.path.join(documentPath, x[1]) for x in attachmentPacks if not os.path.basename(x[1]).startswith('mime0')])
 
 
