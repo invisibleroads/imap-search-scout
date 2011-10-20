@@ -114,16 +114,17 @@ for result in messageQuery:
         when=headerByName['when'],
         bodyText='\n\n'.join(bodyTexts),
         bodyHtml='<br><br>'.join(bodyHtmls),
-        attachmentPaths=[os.path.join(documentPath, x[1]) for x in attachmentPacks])   
+        attachmentPaths=[os.path.join(documentPath, x[1]) for x in attachmentPacks if not os.path.basename(x[1]).startswith('mime0')])
 
 
     print documentID, message['subject'].encode('utf-8'),
     if has(imapServer, message):
         print '[exists]'
     else:
-        code, status = imapStore.revive('inbox', message, headerByName['when'])
-        if code.lower() == 'no':
-            raise Exception(status)
+        messageDate = message['date']
+        r, data = imapServer.append('inbox', '', mktime_tz(parsedate_tz(messageDate)) if
+        if r != 'OK':
+            raise Exception(data)
         print '[ok]'
         # assert has(imapServer, message) == True
     open('export.log', 'wt').write(str(documentID))
