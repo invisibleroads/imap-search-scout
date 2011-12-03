@@ -1,0 +1,107 @@
+release imap-search-scout v0.9.0
+    fix bugs
+        * investigate issue of attachments sometimes getting corrupted
+            ask jake to send recent example
+            test next release of scout with corrupted attachment examples to see if I can replicate the problem
+            check email for examples of corrupted attachments
+
+        fix account counter
+        investigate header parse error mail.header.decode_header(message subject)
+        figure out why clean was stalling for 16 days and eating up memory
+        investigate duplicate emails with different timestamps
+        check why revive is not working
+            consider enabling revive for alternate email accounts
+
+        investigate why scout might not be scanning all folders
+
+    add user customizations
+        have a default superuser account
+
+    change implementation
+        consider having xapian store number lists instead of actual strings for speed
+        get rid of tags
+        check that revive does hour accurately if server time is central time like webfaction
+        save mail headers too
+        consider whether to re-enable trailing wildcards in queries
+        record cc bcc information
+
+    check that the system is functional
+        restore messages functionality
+        restore rules functionality
+
+    improve user interface
+        make it easier to jump to a correct time frame easily in search results, possibly with jump tags
+        consider enabling search by date range
+        consider improving pagination with infinite scrolling
+        enable ability to revive more than one message at once
+        add minutes to time display
+        consider notifying users every time scout processes email
+        add "approximately" to total number of results
+        implement unified dashboard and scout login
+        make login active for XX minutes by default for a given browser even after browser is closed
+
+    improve robustness
+        consider deploying backup instance
+        get sent mail from gmail
+        get sent mail from outlook
+
+release imap-search-scout v0.9.1
+    improve user interface
+        * consider fixing click vs moving mouse to select message
+            consider making CTRL key to hold current selection
+            think of an easier way to focus on a message
+
+        improve the method for scrolling through many message
+            make DOWN arrow key go to next message
+            make DOWN arrow key go to next page of results if is at end
+
+        make easy cosmetic changes
+            include example of boolean search with parentheses and keywords in help
+            change name from relevance to hit count
+            change default to be by date instead of by relevance / hit count
+            make horizontal view be default
+            remove reply and forward
+            add link to Email Webmaster on login page
+            put the word Approximate in # of results estimated
+            change message when it revives so that it is not confusing
+            consider adding message navigation to top
+
+release imap-search-scout v0.9.2
+    figure out how to archive jake's emails from outlook's external folders
+    check messages since most recent scan only (incremental archival)
+    show when was the last inbox vs last complete scan on accounts page
+    fix crontab so that complete scan does not include inbox
+    change implementation
+        add error message when adding an email account that already exists
+        delete from mailbox too when deleting
+        add search history
+            consider implementing labels like alerts instead of tags
+            add way to save good searches and filter them
+            add way to resubmit edited search history
+
+        remove and ignore messages from tco-helper
+        consider implementing message blacklisting
+        consider implementing group deletion
+        implement periodic secure backup to external storage
+
+release imap-search-scout v1.0.0 
+    improve user interface
+        let user control how many search results to display on a page
+        make it easier to find other emails similar to a given message
+
+    improve user interface
+        add count button to count attachment types
+        add the ability to deactivate login accounts
+            implement people account list and deactivate if is_super
+
+        add copy to clipboard
+        make it work on blackberry
+        fix interface for internet explorer 6
+        consider adding refine search (search within results)
+        consider implementing filter results by subcategory
+
+    change implementation
+        make attachments searchable
+        add ability to change rule priority
+        implement rule test with matching email results
+        fix highlighting algorithm
